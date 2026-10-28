@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cornflakes Media - Credits & Billing Ledger Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <h1>Cornflakes Media</h1>
+      <span class="subtitle">Credits & Billing Ledger Dashboard</span>
+    </div>
+    <div class="header-actions">
+      <button id="btnVerify" class="btn btn-outline">Check Invariants</button>
+      <button id="btnReconcile" class="btn btn-outline">Run Reconciler</button>
+      <button id="btnSweeps" class="btn btn-outline">Run Sweeps</button>
+      <span id="badgeStatus" class="badge badge-success">System Healthy</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Quick Stats -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <h3>Outbox Depth</h3>
+        <p id="statOutboxDepth">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Dead Letters</h3>
+        <p id="statDeadLetters">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Virtual Clock</h3>
+        <p id="statVirtualClock">Loading...</p>
+      </div>
+      <div class="stat-card">
+        <h3>Advance Time</h3>
+        <div class="time-btn-group">
+          <button id="btnAdv1d" class="btn btn-sm">+1 Day</button>
+          <button id="btnAdv30d" class="btn btn-sm">+30 Days</button>
+          <button id="btnResetClock" class="btn btn-sm btn-outline">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs Navigation -->
+    <nav class="tabs">
+      <button class="tab-link active" data-tab="tabLedger">Ledger Search</button>
+      <button class="tab-link" data-tab="tabOrgSeats">Org Seat Board</button>
+      <button class="tab-link" data-tab="tabDeadLetters">Dead Letters (<span id="deadLetterBadge">0</span>)</button>
+    </nav>
+
+    <!-- Tab 1: Ledger Search -->
+    <section id="tabLedger" class="tab-content active">
+      <div class="search-bar">
+        <input type="text" id="ledgerSearchInput" placeholder="Search by account ID, reference ID, wallet ID or transaction type...">
+        <button id="btnSearchLedger" class="btn btn-primary">Search</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Entry ID</th>
+              <th>Type</th>
+              <th>Account</th>
+              <th>Amount (Credits)</th>
+              <th>Reference ID</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody">
+            <tr><td colspan="6" class="text-center">Search or click load to view entries</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab 2: Org Seat Board -->
+    <section id="tabOrgSeats" class="tab-content">
+      <div class="section-header">
+        <h2>Institutional Seat Roster</h2>
+        <span class="text-muted">Pro-rata billing & monthly credit allocations</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member ID</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Seat Billed Until</th>
+              <th>Joined Date</th>
+            </tr>
+          </thead>
+          <tbody id="seatsTableBody">
+            <tr><td colspan="6" class="text-center">Loading seat roster...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab 3: Dead Letters -->
+    <section id="tabDeadLetters" class="tab-content">
+      <div class="section-header">
+        <h2>Dead Letter Webhook Queue</h2>
+        <span class="text-muted">Events failing after max retries; click Retry to re-process</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Event ID</th>
+              <th>Payment ID</th>
+              <th>Event Type</th>
+              <th>Retries</th>
+              <th>Last Error</th>
+              <th>Received At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="deadLettersTableBody">
+            <tr><td colspan="7" class="text-center">No dead letter webhooks found</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
