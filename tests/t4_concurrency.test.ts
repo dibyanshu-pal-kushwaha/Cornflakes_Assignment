@@ -3,7 +3,7 @@ import { migrate } from '../src/db/migrate.js';
 import { WalletService } from '../src/services/wallet.service.js';
 import { SchedulerService } from '../src/services/scheduler.service.js';
 import { ClockService } from '../src/services/clock.service.js';
-import { pool } from '../src/db/connection.js';
+import { pool, query } from '../src/db/connection.js';
 
 describe('Concurrency & Non-Overspend (Trap T4)', () => {
   beforeAll(async () => {
@@ -19,9 +19,6 @@ describe('Concurrency & Non-Overspend (Trap T4)', () => {
   });
 
   it('T4: 100 parallel reserves against a balance for 10 -> exactly 10 succeed, never negative', async () => {
-    // Clean up any stale expired reservations from previous runs
-    await SchedulerService.releaseExpiredReservations();
-
     const userId = `t4_user_${Date.now()}_${Math.random()}`;
     const wallet = await WalletService.getOrCreateWallet(userId);
 
@@ -55,8 +52,14 @@ describe('Concurrency & Non-Overspend (Trap T4)', () => {
     // Advance virtual clock by 16 minutes (TTL is 15 minutes)
     await ClockService.advanceSeconds(16 * 60);
 
-    const releasedCount = await SchedulerService.releaseExpiredReservations();
-    expect(releasedCount).toBe(10);
+    await SchedulerService.releaseExpiredReservations();
+
+    // Verify all active reservations for this wallet have expired & released
+    const activeRes = await query(
+      "SELECT COUNT(*) FROM reservations WHERE wallet_id = $1 AND status = 'active'",
+      [wallet.id]
+    );
+    expect(Number(activeRes.rows[0].count)).toBe(0);
 
     const restoredWallet = await WalletService.getWallet(wallet.id);
     expect(Number(restoredWallet.reserved_balance)).toBe(0);
