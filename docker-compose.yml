@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: billing_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: billing_ledger
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d billing_ledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: billing_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # API Replica 1
+  api-1:
+    build: .
+    container_name: billing_api_1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      REPLICA_ID: api-1
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/billing_ledger
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: cornflakes-candidate-secret-key-2026-super-safe
+      WEBHOOK_SECRET: whsec_mock_gateway_shared_secret_key_8829
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  # API Replica 2 (Required: at least two service replicas)
+  api-2:
+    build: .
+    container_name: billing_api_2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4002
+      REPLICA_ID: api-2
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/billing_ledger
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: cornflakes-candidate-secret-key-2026-super-safe
+      WEBHOOK_SECRET: whsec_mock_gateway_shared_secret_key_8829
+    ports:
+      - "4002:4002"
+    restart: unless-stopped
+
+  # Outbox Worker & Scheduled Sweeps
+  worker:
+    build: .
+    container_name: billing_worker
+    command: npm run worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/billing_ledger
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: cornflakes-candidate-secret-key-2026-super-safe
+      WEBHOOK_SECRET: whsec_mock_gateway_shared_secret_key_8829
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
